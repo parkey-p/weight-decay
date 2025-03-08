@@ -1,0 +1,28 @@
+[transform]
+
+[model]
+type = 'SimpleCNN'
+num_classes = 100
+#load = false
+load = "runs/2025-03-08_14-21-13_/model.ckpt"
+
+[train]
+num_epoch = 5
+
+[data_set]
+data_set = 'CIFAR100'
+root = "D:\\cifar100"
+
+[data_set_test]
+data_set = 'CIFAR100'
+root = "D:\\cifar100"
+
+[data_loader]
+num_workers = 6
+batch_size = 64
+shuffle = true
+
+[data_loader_test]
+num_workers = 6
+batch_size = 64
+shuffle = false
