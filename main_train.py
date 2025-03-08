@@ -28,12 +28,24 @@ if __name__ == "__main__":
         logger.info(f"Config settings.....{config_as_token(config)}")
 
     ds = load_dataset(config["data_set"])
+    ds_test = load_dataset(config.get("data_set_test", {}))
 
     dl_kwargs = config["data_loader"]
     dl = torch.utils.data.DataLoader(ds, **dl_kwargs)
+    if ds_test is not None:
+        dl_test = torch.utils.data.DataLoader(
+            ds_test, **config.get("data_loader_test", {})
+        )
+    else:
+        dl_test = None
 
     model = load_model(config["model"], ds[0][0].size())
 
     summary_writer = SummaryWriter(str(log_path))
-    model.fit(**config["train"], data_loader=dl, writer=summary_writer)
+    model.fit(
+        **config["train"],
+        data_loader=dl,
+        writer=summary_writer,
+        test_data_loader=dl_test,
+    )
     model.save(log_path.joinpath("model.ckpt"))

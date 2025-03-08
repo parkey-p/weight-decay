@@ -8,7 +8,7 @@ import logging
 import models
 from models import baseClassifier
 
-from typing import TypedDict, NewType, Literal
+from typing import TypedDict, NewType, Literal, Optional
 from enum import Enum, auto
 
 
@@ -35,11 +35,13 @@ class ModelKwargs(TypedDict, total=False):
     load: Literal[False] | PathLike
 
 
-def load_dataset(ds_kwargs: DsKwargs) -> torch.utils.data.Dataset:
+def load_dataset(ds_kwargs: DsKwargs) -> Optional[torch.utils.data.Dataset]:
+    if not ds_kwargs:
+        return None
     ds_type = ds_kwargs.pop("data_set")
     data_set: datasets = getattr(datasets, ds_type)
     transforms = Compose((ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))))
-    data_set = data_set(train=True, transform=transforms, **ds_kwargs)
+    data_set = data_set(transform=transforms, **ds_kwargs)
     return data_set
 
 

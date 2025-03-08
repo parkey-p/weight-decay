@@ -7,6 +7,7 @@ import torch
 import tqdm
 from torch import nn
 from torch.nn import Module
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -54,17 +55,23 @@ class BaseClassifier(Module, metaclass=ABCMeta):
         correct = (y == y_pred.argmax(dim=1)).sum().item()
         return loss.item(), correct / y.shape[0]
 
-    def run_epoch(self, data_loader) -> tuple[torch.Tensor, torch.Tensor]:
+    def run_epoch(
+        self, data_loader: DataLoader, train: bool = True
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         loss_history = []
         acc_history = []
         pbar = tqdm.tqdm(data_loader, position=0, leave=False)
-        pbar.set_description_str("Batch: ")
+        pbar_str = "Batch: " if train else "Validation: "
+        pbar.set_description_str(pbar_str)
         for x, y in pbar:
             x: torch.Tensor
             y: torch.Tensor
             x = x.to(self.device)
             y = y.to(self.device)
-            b_loss, b_acc = self.train_batch(x, y)
+            if train:
+                b_loss, b_acc = self.train_batch(x, y)
+            else:
+                b_loss, b_acc = self.eval_batch(x, y)
             loss_history.append(b_loss)
             acc_history.append(b_acc)
             pbar.set_postfix_str(f"batch loss {b_loss:.2f}")
@@ -72,18 +79,32 @@ class BaseClassifier(Module, metaclass=ABCMeta):
         acc_history = torch.tensor(acc_history)
         return loss_history, acc_history
 
-    def fit(self, num_epoch, data_loader, writer=Optional[SummaryWriter]):
+    def fit(
+        self,
+        num_epoch: int,
+        data_loader: DataLoader,
+        writer: Optional[SummaryWriter] = None,
+        test_data_loader: Optional[DataLoader] = None,
+    ):
         pbar = tqdm.trange(num_epoch, position=1)
         pbar.set_description_str("Epochs: ")
         for _ in pbar:
             e_loss, e_acc = self.run_epoch(data_loader)
+            self.epoch += 1
             mean_loss = e_loss.mean().item()
             mean_acc = e_acc.mean().item()
             pbar.set_postfix_str(f"epoch loss: {mean_loss :.2f}")
-            self.epoch += 1
             if writer is not None:
                 writer.add_scalar("Loss/Train", mean_loss, self.epoch)
                 writer.add_scalar("Accuracy/Train", mean_acc, self.epoch)
+
+            if test_data_loader is not None:
+                v_loss, v_acc = self.run_epoch(test_data_loader, train=False)
+                mean_v_loss = v_loss.mean().item()
+                mean_v_acc = v_acc.mean().item()
+                if writer is not None:
+                    writer.add_scalar("Loss/Validation", mean_v_loss, self.epoch)
+                    writer.add_scalar("Accuracy/Validation", mean_v_acc, self.epoch)
 
     def save(self, destination: str | Path):
         torch.save(
@@ -103,7 +124,14 @@ class BaseClassifier(Module, metaclass=ABCMeta):
         self.epoch = checkpoint["epoch"]
         self.to(self.device)
 
-    def test(self, data_loader):
+    def eval_batch(
+        self, x: torch.Tensor, y: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         self.eval()
         with torch.no_grad():
-            ...
+            y_pred = self.forward(x)
+            loss = self.loss(y_pred, y)
+            correct = (y == y_pred.argmax(dim=1)).sum().item()
+
+            self.train()
+            return loss.item(), correct / y.shape[0]

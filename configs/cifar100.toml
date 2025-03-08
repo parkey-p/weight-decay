@@ -12,10 +12,12 @@ num_epoch = 5
 [data_set]
 data_set = 'CIFAR100'
 root = "D:\\cifar100"
+train = true
 
 [data_set_test]
 data_set = 'CIFAR100'
 root = "D:\\cifar100"
+train = false
 
 [data_loader]
 num_workers = 6
