@@ -22,6 +22,7 @@ class BaseClassifier(Module, metaclass=ABCMeta):
         num_classes: int,
         device: torch.device,
         load: Path | Literal[False] = False,
+        optimizer: dict = {},
     ):
         super().__init__()
         self.device = device
@@ -30,7 +31,8 @@ class BaseClassifier(Module, metaclass=ABCMeta):
         self.epoch = 0
         self.loss = nn.NLLLoss()
         self.__specific_init__(input_shape, num_classes, device)
-        self.optimizer = torch.optim.Adam(self.parameters())
+        self.optimizer = torch.optim.AdamW(self.parameters(), **optimizer)
+
         self.to(self.device)
         if load is not False:
             load: Path

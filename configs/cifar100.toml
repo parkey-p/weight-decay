@@ -3,11 +3,14 @@
 [model]
 type = 'SimpleCNN'
 num_classes = 100
-#load = false
-load = "runs/2025-03-08_14-21-13_/model.ckpt"
+load = false
+
+[model.optimizer]
+lr = 0.002
+weight_decay = 0.02
 
 [train]
-num_epoch = 5
+num_epoch = 100
 
 [data_set]
 data_set = 'CIFAR100'
