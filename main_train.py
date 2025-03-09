@@ -26,6 +26,9 @@ if __name__ == "__main__":
     with open(args.config, "rb") as f:
         config = tomllib.load(f)
         logger.info(f"Config settings.....{config_as_token(config)}")
+    # write the config in config format for easier re-running
+    with open(log_path.joinpath("config.toml"), "wb") as f:
+        tomllib.dump(config, f)
 
     ds = load_dataset(config["data_set"])
     ds_test = load_dataset(config.get("data_set_test", {}))
