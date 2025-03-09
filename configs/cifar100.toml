@@ -3,7 +3,9 @@
 [model]
 type = 'SimpleCNN'
 num_classes = 100
-load = false
+#load = false
+load = 'runs/vanilla_2025-03-08_18-19-34_/model.ckpt'
+#load = 'runs/weight_decay_2025-03-08_22-34-45_/model.ckpt'
 
 [model.optimizer]
 lr = 0.002
